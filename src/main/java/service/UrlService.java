@@ -3,50 +3,48 @@ package service;
 import model.Url;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestMapping;
 import repository.UrlRepository;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.Random;
 
 @Service
-@RequestMapping
 public class UrlService {
     @Autowired
     public UrlRepository urlRepository;
 
-    public String shortenUrl(String originalUrl){
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    public String shortenUrl(String originalUrl) {
         String shortUrl = generateShortUrl();
         Url url = new Url();
         url.setOriginalUrl(originalUrl);
         url.setShortUrl(shortUrl);
-        url.setExpirationDate(LocalDateTime.now().plusDays(30));//prazo de expiração de 30 dias
+        url.setExpirationDate(LocalDateTime.now().plusDays(30));
         urlRepository.save(url);
         return shortUrl;
     }
 
-
-    public Optional<Url> getOriginalUrl(String shortUrl){
+    public Optional<Url> getOriginalUrl(String shortUrl) {
         Optional<Url> urlOptional = urlRepository.findByShortUrl(shortUrl);
-        if(urlOptional.isPresent()){
+        if (urlOptional.isPresent()) {
             Url url = urlOptional.get();
-            if(url.getExpirationDate().isAfter(LocalDateTime.now())){
+            if (url.getExpirationDate().isAfter(LocalDateTime.now())) {
                 return Optional.of(url);
-            }else{
+            } else {
                 urlRepository.delete(url);
             }
         }
         return Optional.empty();
     }
 
-    public String generateShortUrl(){
-        String characters = "ABCDEFGHIJLMNOPQRSTUVXZWYabcdefghijlmnopqrstuvyxzwy";
+    public String generateShortUrl() {
         StringBuilder shortUrl = new StringBuilder();
-        Random random = new Random();
-        int lenght = 5 + random.nextInt(6);
-        for(int i = 0; i < lenght; i++){
-            shortUrl.append(characters.charAt(random.nextInt(characters.length())));
+        int length = 5 + RANDOM.nextInt(6);
+        for (int i = 0; i < length; i++) {
+            shortUrl.append(CHARACTERS.charAt(RANDOM.nextInt(CHARACTERS.length())));
         }
         return shortUrl.toString();
     }
